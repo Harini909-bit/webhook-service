@@ -17,7 +17,16 @@ load_dotenv()  # Load environment variables from .env file
 
 # Safe environment variable handling
 API_KEYS = os.getenv("API_KEYS", "").split(",") if os.getenv("API_KEYS") else []
-VALID_API_KEYS = {key.strip(): f"user-{i}" for i, key in enumerate(API_KEYS, 1)} if API_KEYS else {"test-key": "test-user"}
+VALID_API_KEYS = {
+    "test-key": "test-user",  # Default key for development
+    **{  # Keys from environment variables
+        key.strip(): f"user-{i}" 
+        for i, key in enumerate(
+            os.getenv("API_KEYS", "test-key").split(","),
+            1
+        )
+    }
+}
 
 # Import database and models
 from .database import SessionLocal, engine
