@@ -251,3 +251,11 @@ async def debug_keys():
     }
 
 app.include_router(router)
+
+@app.get("/debug/keys", include_in_schema=False)
+async def show_valid_keys():
+    """Debug endpoint to list all valid API keys"""
+    return {
+        "valid_keys": list(VALID_API_KEYS.keys()),
+        "note": "Remove this endpoint in production!"
+    }
