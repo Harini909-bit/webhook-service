@@ -228,3 +228,17 @@ async def health_check():
 @app.get("/debug/keys")
 async def debug_keys():
     return {"valid_keys": list(VALID_API_KEYS.keys())}
+
+from fastapi import APIRouter
+
+router = APIRouter()
+
+@router.get("/debug/keys", include_in_schema=False)
+async def debug_keys():
+    
+    return {
+        "valid_keys": list(VALID_API_KEYS.keys()),
+        "note": "This is for debugging only - remove in production"
+    }
+
+app.include_router(router)
