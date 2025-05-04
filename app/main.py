@@ -8,25 +8,40 @@ import uuid
 import time
 import hmac
 import hashlib
+import os
+from dotenv import load_dotenv
 from typing import Optional
 
-from dotenv import load_dotenv
-import os
+# Load environment variables
+load_dotenv()
 
-load_dotenv()  # Load environment variables from .env file
+# Initialize FastAPI
+app = FastAPI(title="Webhook Delivery Service")
 
-# Safe environment variable handling
-API_KEYS = os.getenv("API_KEYS", "").split(",") if os.getenv("API_KEYS") else []
-VALID_API_KEYS = {
-    "test-key": "test-user",  # Default key for development
-    **{  # Keys from environment variables
-        key.strip(): f"user-{i}" 
-        for i, key in enumerate(
-            os.getenv("API_KEYS", "test-key").split(","),
-            1
-        )
+# API Key Configuration
+API_KEY_NAME = "x-api-key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+# Key setup - reads from .env with fallback
+API_KEYS = os.getenv("API_KEYS", "test-key,another-key").split(",")
+VALID_API_KEYS = {key.strip(): f"user-{i}" for i, key in enumerate(API_KEYS, 1)}
+
+# Debug endpoint
+@app.get("/debug/keys", include_in_schema=False)
+async def debug_keys():
+    """Temporary endpoint to list valid API keys (remove in production)"""
+    return {
+        "valid_keys": list(VALID_API_KEYS.keys()),
+        "note": "For development only"
     }
-}
+
+async def get_api_key(api_key: str = Security(api_key_header)):
+    if api_key not in VALID_API_KEYS:
+        raise HTTPException(
+            status_code=403,
+            detail="Invalid API Key"
+        )
+    return api_key
 
 # Import database and models
 from .database import SessionLocal, engine
@@ -259,3 +274,8 @@ async def show_valid_keys():
         "valid_keys": list(VALID_API_KEYS.keys()),
         "note": "Remove this endpoint in production!"
     }
+
+
+@app.get("/protected")
+async def protected_route(api_key: str = Depends(get_api_key)):
+    return {"message": "Access granted", "user": VALID_API_KEYS.get(api_key
