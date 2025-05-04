@@ -224,3 +224,7 @@ async def get_delivery_status(
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.get("/debug/keys")
+async def debug_keys():
+    return {"valid_keys": list(VALID_API_KEYS.keys())}
