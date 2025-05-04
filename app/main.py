@@ -13,13 +13,11 @@ from typing import Optional
 from dotenv import load_dotenv
 import os
 
-load_dotenv()  # Load variables from .env file
+load_dotenv()  # Load environment variables from .env file
 
-# Replace the hardcoded API keys with:
-VALID_API_KEYS = {
-    key.strip(): f"user-{i}" 
-    for i, key in enumerate(os.getenv("API_KEYS").split(","), 1)
-}
+# Safe environment variable handling
+API_KEYS = os.getenv("API_KEYS", "").split(",") if os.getenv("API_KEYS") else []
+VALID_API_KEYS = {key.strip(): f"user-{i}" for i, key in enumerate(API_KEYS, 1)} if API_KEYS else {"test-key": "test-user"}
 
 # Import database and models
 from .database import SessionLocal, engine
