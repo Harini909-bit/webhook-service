@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Security
+from fastapi import FastAPI, HTTPException, Security, Depends
 from fastapi.security import APIKeyHeader
 from fastapi.responses import JSONResponse
 import os
@@ -13,11 +13,16 @@ app = FastAPI()
 API_KEY_NAME = "x-api-key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
-# Key setup - with test keys as fallback
-API_KEYS = os.getenv("API_KEYS", "test-key,another-key").split(",")
-VALID_API_KEYS = {key.strip(): f"user-{i}" for i, key in enumerate(API_KEYS, 1)}
+# Key setup with validation
+API_KEYS = os.getenv("API_KEYS", "test-key,another-key")
+VALID_API_KEYS = (
+    {key.strip(): f"user-{i}" 
+     for i, key in enumerate(API_KEYS.split(","), 1)
+     if API_KEYS.strip() 
+     else {"test-key": "test-user"}  # Fallback if empty
+)
 
-# Debug endpoint (must come AFTER app creation)
+# Debug endpoint
 @app.get("/debug/keys", include_in_schema=False)
 async def debug_keys():
     return {
@@ -27,7 +32,7 @@ async def debug_keys():
 
 # Authentication dependency
 async def get_api_key(api_key: str = Security(api_key_header)):
-    if api_key not in VALID_API_KEYS:
+    if not api_key or api_key not in VALID_API_KEYS:
         raise HTTPException(
             status_code=403,
             detail="Invalid API Key"
